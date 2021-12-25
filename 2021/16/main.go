@@ -13,30 +13,52 @@ type Packet struct {
 	Ver    int
 	Id     int
 	LenId  int
+	LenT   int
 	Len    int
+	CountT int
 	Count  int
 	NumBin string
 	Num    int
 	End    int
+	Parent *Packet
 }
 
-func NewPacket(start, length, count int) *Packet {
+func NewPacket(start, length, count int, parent *Packet) *Packet {
 	return &Packet{
 		Start:  start,
 		Buffer: "",
 		Ver:    -1,
 		Id:     -1,
 		LenId:  -1,
+		LenT:   -1,
 		Len:    length,
+		CountT: -1,
 		Count:  count,
 		NumBin: "",
 		Num:    -1,
 		End:    -1,
+		Parent: parent,
 	}
 }
 
+func DecOpen(idx int, openPackets []*Packet) []*Packet {
+	oneUp := openPackets[len(openPackets)-1]
+	oneUp.Count--
+	if oneUp.CountT != -1 && oneUp.Count == 0 {
+		//oneUp.End = idx
+		openPackets = openPackets[:len(openPackets)-1]
+
+		if len(openPackets) >= 1 {
+			return DecOpen(idx, openPackets)
+		}
+
+	}
+
+	return openPackets
+}
+
 func main() {
-	input := ReadFile("./sinput.txt")
+	input := ReadFile("./input.txt")
 
 	toRun := []string{}
 	for _, line := range input {
@@ -48,15 +70,15 @@ func main() {
 	}
 
 	for _, bits := range toRun {
-		fmt.Println("bits", bits)
+		fmt.Println("bits", len(bits))
 		run(bits)
 	}
-
 }
 
 func run(allBits string) {
 	packets := []*Packet{}
-	packets = append(packets, NewPacket(0, -1, -1))
+	packets = append(packets, NewPacket(0, -1, -1, nil))
+	openPackets := []*Packet{}
 
 	for idx := 0; idx < len(allBits); idx++ {
 		cp := packets[len(packets)-1]
@@ -66,19 +88,32 @@ func run(allBits string) {
 		if cp.Count != -1 { // Count handling (LenId = 1)
 			if cp.Count == 0 {
 				cp.End = idx
+				openPackets = openPackets[:len(openPackets)-1]
+				cp.Count--
 			}
 		}
 
 		if cp.Len != -1 { // Len handling (LenId = 0)
 			if cp.Len == 0 {
 				cp.End = idx
+				openPackets = openPackets[:len(openPackets)-1]
 			}
 
 			cp.Len--
 		}
 
-		if cp.End != -1 { // End handling
-			packets = append(packets, NewPacket(idx, -1, -1))
+		if cp.End == idx { // End handling for Lengther and Counter
+			cp.End = idx - 1
+			if cp.CountT == -1 {
+				//		openPackets = DecOpen(cp.End, openPackets)
+			}
+
+			parent := &Packet{}
+			if len(openPackets) > 0 {
+				parent = openPackets[len(openPackets)-1]
+			}
+
+			packets = append(packets, NewPacket(idx, cp.Len, cp.Count, parent))
 			cp = packets[len(packets)-1]
 			cp.Buffer += string(allBits[idx])
 		}
@@ -99,25 +134,29 @@ func run(allBits string) {
 		}
 
 		if cp.Id == 4 { // Litteral packet handling
-			if len(cp.Buffer) == 1 {
-				continue
-			}
 			if cp.Buffer[0] == '1' && len(cp.Buffer) == 5 {
 				cp.NumBin += cp.Buffer[1:]
 				cp.Buffer = ""
+
 				continue
 			}
+
 			if cp.Buffer[0] == '0' && len(cp.Buffer) == 5 {
 				cp.NumBin += cp.Buffer[1:]
 				cp.Buffer = ""
 				cp.Num = binToDec(cp.NumBin)
 				cp.End = idx
+				openPackets = DecOpen(idx, openPackets)
+
 				if cp.Count != -1 {
 					cp.Count--
-					packets = append(packets, NewPacket(idx+1, -1, cp.Count))
 				}
-				continue
+				if cp.Count != 0 && cp.Len != 0 {
+					packets = append(packets, NewPacket(idx+1, cp.Len, cp.Count, cp.Parent))
+				}
 			}
+
+			continue
 		}
 
 		if cpCur == 6 { // LenId handling
@@ -130,10 +169,14 @@ func run(allBits string) {
 			if cpCur < 7+15 {
 				if cpCur == 7+14 {
 					length := binToDec(cp.Buffer)
-					packets = append(packets, NewPacket(idx+1, length, -1))
+					cp.Len = length
+					cp.LenT = length
+					cp.End = idx + length
+					openPackets = append(openPackets, cp)
+
+					packets = append(packets, NewPacket(idx+1, length, -1, cp))
 					cp.Buffer = ""
 				}
-				continue
 			}
 		}
 
@@ -141,47 +184,133 @@ func run(allBits string) {
 			if cpCur < 7+11 {
 				if cpCur == 7+10 {
 					count := binToDec(cp.Buffer)
-					packets = append(packets, NewPacket(idx+1, -1, count))
+					cp.Count = count
+					cp.CountT = count
+					openPackets = append(openPackets, cp)
+
+					packets = append(packets, NewPacket(idx+1, -1, count, cp))
 					cp.Buffer = ""
 				}
-				continue
 			}
 		}
 	}
 
-	ans := 0
-	nums := []int{}
-	calc(p, packets)
+	ver := 0
 
-	for i := len(packets) - 1; i >= 0; i-- {
+	for i := len(packets) - 2; i >= 0; i-- {
 		p := packets[i]
 
-		if p.Id == -1 {
-			nums = []int{}
-			continue
-		}
-		fmt.Printf("ID:%v Num:%v Start:%v\n", p.Id, p.Num, p.Start)
-		if p.Id == 4 {
-			nums = append(nums, p.Num)
-			continue
+		if p.Ver != -1 {
+			ver += p.Ver
 		}
 
+		if p.End == -1 {
+			np := packets[i+1]
+			for k := 1; k < p.CountT; k++ {
+				for _, cp := range packets {
+					if cp.Start == np.End+1 {
+						np = cp
+						break
+					}
+				}
+			}
+			p.End = np.End
+		}
+
+		par := p.Parent
+		spacer := ""
+		for par != nil {
+			spacer += " "
+			par = par.Parent
+		}
+		if p.Id == 4 {
+			fmt.Printf("  %sID:%v   Start:%v   End:%v   Num:%v \n", spacer, p.Id, p.Start, p.End, p.Num)
+		} else {
+			if p.LenT != -1 {
+				if p.Start+p.LenT+21 != p.End {
+					fmt.Println("PANIC")
+				}
+				fmt.Printf("> %sID:%v   Start:%v   End:%v   Len:%v   LID:%v \n", spacer, p.Id, p.Start, p.End, p.LenT, p.LenId)
+			} else {
+				if p.End == -1 {
+					fmt.Println("PANIC")
+				}
+				fmt.Printf("> %sID:%v   Start:%v   End:%v   Cnt:%v   LID:%v \n", spacer, p.Id, p.Start, p.End, p.CountT, p.LenId)
+			}
+		}
 	}
+
+	fmt.Println(calc(packets[:len(packets)-1])[0].Num)
 
 	// 14533618 -- too low
+	// 1114600142730 -- Good
+	// 1127730943879 -- too high
 	// 2060457365095 -- too high
-	fmt.Println("Answer", ans)
+	fmt.Println("VR", ver)
 }
 
-func calc(p *Packet, packets []*Packet) int {
-	if p.Id == -1 {
-		calc(packets[0], packets[1:])
-	}
-	if p.Id == 4 {
-		return p.Num
+func calc(ps []*Packet) []*Packet {
+	if len(ps) == 1 {
+		return ps
 	}
 
-	fun := getFun(p.Id)
+	for _, p := range ps {
+		if p.Id != 4 {
+			children, simple := getChildren(p, ps)
+
+			if simple {
+				nums := []int{}
+				for _, pk := range children {
+					nums = append(nums, pk.Num)
+				}
+				p.Num = getFun(p.Id)(nums...)
+				fmt.Println(p.Id, p.Start, p.End, nums, p.Num)
+				p.Id = 4
+
+				ps = removeChildren(ps, children)
+
+				break
+			}
+		}
+	}
+
+	return calc(ps)
+}
+
+func removeChildren(ps, toRemove []*Packet) []*Packet {
+	newPs := []*Packet{}
+
+	hMap := map[int]bool{}
+	for _, pr := range toRemove {
+		hMap[pr.Start] = true
+	}
+
+	for _, p := range ps {
+		if hMap[p.Start] != true {
+			newPs = append(newPs, p)
+		}
+	}
+
+	return newPs
+}
+
+func getChildren(p *Packet, ps []*Packet) (children []*Packet, simple bool) {
+	simple = true
+
+	for _, cp := range ps {
+		if cp.Start > p.Start {
+			if cp.End > p.End {
+				return children, simple
+			}
+
+			if cp.Id != 4 {
+				simple = false
+			}
+			children = append(children, cp)
+		}
+	}
+
+	return children, simple
 }
 
 func getFun(Id int) func(...int) int {
@@ -212,10 +341,7 @@ func sum(nums ...int) (res int) {
 
 func product(nums ...int) (res int) {
 	res = nums[0]
-	for i, n := range nums {
-		if i == 0 {
-			continue
-		}
+	for _, n := range nums[1:] {
 		res *= n
 	}
 	return
@@ -242,21 +368,21 @@ func maximum(nums ...int) (max int) {
 }
 
 func greater(nums ...int) (res int) {
-	if nums[1] > nums[0] {
+	if nums[0] > nums[1] {
 		return 1
 	}
 	return 0
 }
 
 func less(nums ...int) (res int) {
-	if nums[1] < nums[0] {
+	if nums[0] < nums[1] {
 		return 1
 	}
 	return 0
 }
 
 func equal(nums ...int) (res int) {
-	if nums[1] == nums[0] {
+	if nums[0] == nums[1] {
 		return 1
 	}
 	return 0
