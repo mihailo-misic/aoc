@@ -26,7 +26,6 @@ func ReadFile(path string) (input []string) {
 	return
 }
 
-/*
 func Includes(strSlice []string, str string) bool {
 	hMap := make(map[string]bool)
 	for _, s := range strSlice {
@@ -75,4 +74,3 @@ func Equal(a, b []string) bool {
 	}
 	return true
 }
-*/
