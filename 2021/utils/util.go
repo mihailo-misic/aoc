@@ -26,6 +26,7 @@ func ReadFile(path string) (input []string) {
 	return
 }
 
+/*
 func Includes(strSlice []string, str string) bool {
 	hMap := make(map[string]bool)
 	for _, s := range strSlice {
@@ -35,7 +36,6 @@ func Includes(strSlice []string, str string) bool {
 	return hMap[str] == true
 }
 
-/*
 func Intersect(s1, s2 []string) (inter []string) {
 	hMap := make(map[string]bool)
 	for _, s := range s1 {

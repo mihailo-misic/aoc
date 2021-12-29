@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "../utils"
+	. "github.com/thoas/go-funk"
 )
 
 func main() {
