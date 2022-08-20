@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 type Node struct {

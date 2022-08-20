@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 type Vertex struct {

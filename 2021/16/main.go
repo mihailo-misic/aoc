@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 type Packet struct {

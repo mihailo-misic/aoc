@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	util "../utils"
+	util "github.com/mihailo-misic/aoc/util"
 )
 
 func main() {

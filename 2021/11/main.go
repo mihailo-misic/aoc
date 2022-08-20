@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 func main() {

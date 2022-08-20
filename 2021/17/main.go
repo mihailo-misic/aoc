@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 var reg = regexp.MustCompile(".+x=([-\\d]+)\\.\\.([-\\d]+).+y=([-\\d]+)\\.\\.([-\\d]+)")

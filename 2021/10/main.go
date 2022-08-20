@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 var openToClose = map[string]string{

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 var reactions = map[string]string{}

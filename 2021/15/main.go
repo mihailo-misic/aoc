@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 type Coord struct {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "../utils"
+	. "github.com/mihailo-misic/aoc/util"
 )
 
 type Dot struct {
