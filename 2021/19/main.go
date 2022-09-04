@@ -25,34 +25,79 @@ var scanners = map[int][]Beacon{}
 
 var globalBeacons = []Beacon{}
 
-const REQUIRED_MATCH_COUNT = 3
+const REQUIRED_MATCH_COUNT = 12
 
 func main() {
-	lines := ReadFile("./tinput.txt")
+	lines := ReadFile("./input.txt")
 
 	scanNum := 0
 	for _, line := range lines {
 		scanNum = readLines(line, scanNum)
 	}
 
-	for scannerNum, scan := range scanners {
-		fmt.Println(scannerNum, scan, "\n")
-	}
+	scannersToGo := map[int][]Beacon{}
 
 	for scannerNum, scan := range scanners {
 		if scannerNum == 0 {
 			addToGlobalBeacons(scan)
 			continue
 		}
-		// TODO for each orientation
-		// TODO handle no match
-		overlap := checkForOverlap(globalBeacons, scan)
-		fmt.Println(">>> overlap", overlap)
+
+		scannersToGo[scannerNum] = scan
 	}
 
-	fmt.Println(globalBeacons)
+	ops := []func(Beacon) Beacon{
+		turnNothing,
+		turnRight, turnRight, turnRight, turnDown,
+		turnRight, turnRight, turnRight, turnDown,
+		turnRight, turnRight, turnRight, turnUp,
+		turnRight, turnRight, turnRight, turnUp,
+		turnRight, turnRight, turnRight, turnDown,
+		turnRight, turnRight, turnRight,
+	}
 
-	fmt.Println("\nAnswer:")
+	for len(scannersToGo) > 0 {
+		for scannerNum, scan := range scannersToGo {
+			rotatedScan := scan
+			for _, op := range ops {
+				rotatedScan = rotate(rotatedScan, op)
+
+				matchedScan := checkForOverlap(globalBeacons, rotatedScan)
+				if matchedScan != nil {
+					fmt.Println("Matched", scannerNum)
+					addToGlobalBeacons(matchedScan)
+					delete(scannersToGo, scannerNum)
+					break
+				}
+			}
+		}
+	}
+
+	fmt.Println("\nAnswer:", len(globalBeacons))
+}
+
+func rotate(scan []Beacon, rotation func(Beacon) Beacon) (rotatedScan []Beacon) {
+	for _, beacon := range scan {
+		rotatedScan = append(rotatedScan, rotation(beacon))
+	}
+
+	return
+}
+
+func turnNothing(b Beacon) Beacon {
+	return b
+}
+
+func turnRight(b Beacon) Beacon {
+	return Beacon{b.Z * -1, b.Y, b.X}
+}
+
+func turnDown(b Beacon) Beacon {
+	return Beacon{b.X, b.Z, b.Y * -1}
+}
+
+func turnUp(b Beacon) Beacon {
+	return Beacon{b.X, b.Z * -1, b.Y}
 }
 
 func addToGlobalBeacons(scan []Beacon) {
@@ -70,25 +115,19 @@ func addToGlobalBeacons(scan []Beacon) {
 	}
 }
 
-func checkForOverlap(scan1, scan2 []Beacon) bool {
-	fmt.Println(">>> scan1", scan1)
-	fmt.Println(">>> scan2", scan2)
-
+func checkForOverlap(scan1, scan2 []Beacon) []Beacon {
 	for _, beacon1 := range scan1 {
 		for _, beacon2 := range scan2 {
 			moveVector := beacon2.getMoveVector(beacon1)
 			movedScan := moveBeacons(scan2, moveVector)
-			fmt.Println(">>> movedScan", movedScan)
 			matchCount := getMatchCount(scan1, movedScan)
-			fmt.Println(">>> matchCount", matchCount)
 			if matchCount >= REQUIRED_MATCH_COUNT {
-				addToGlobalBeacons(movedScan)
-				return true
+				return movedScan
 			}
 		}
 	}
 
-	return false
+	return nil
 }
 
 func moveBeacons(scan1 []Beacon, moveVector Vector) []Beacon {
