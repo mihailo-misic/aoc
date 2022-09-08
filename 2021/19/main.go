@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/mihailo-misic/aoc/util"
 )
@@ -24,10 +26,12 @@ type Vector struct {
 var scanners = map[int][]Beacon{}
 
 var globalBeacons = []Beacon{}
+var globalScanners = []Beacon{}
 
 const REQUIRED_MATCH_COUNT = 12
 
 func main() {
+	start := time.Now()
 	lines := ReadFile("./input.txt")
 
 	scanNum := 0
@@ -56,17 +60,20 @@ func main() {
 		turnRight, turnRight, turnRight,
 	}
 
+	globalScanners = append(globalScanners, Beacon{0, 0, 0})
+
 	for len(scannersToGo) > 0 {
 		for scannerNum, scan := range scannersToGo {
 			rotatedScan := scan
 			for _, op := range ops {
 				rotatedScan = rotate(rotatedScan, op)
 
-				matchedScan := checkForOverlap(globalBeacons, rotatedScan)
+				matchedScan, ms := checkForOverlap(globalBeacons, rotatedScan)
 				if matchedScan != nil {
-					fmt.Println("Matched", scannerNum)
+					globalScanners = append(globalScanners, Beacon{ms.X, ms.Y, ms.Z})
 					addToGlobalBeacons(matchedScan)
 					delete(scannersToGo, scannerNum)
+					fmt.Println("Scanners left:", len(scannersToGo))
 					break
 				}
 			}
@@ -74,6 +81,37 @@ func main() {
 	}
 
 	fmt.Println("\nAnswer:", len(globalBeacons))
+	// TODO Optimize time
+	fmt.Println("Execution time", time.Since(start))
+	// 1m15.695910824s
+	// 1m13.805178101s
+
+	largestDistance := 0
+	for _, s1 := range globalScanners {
+		for _, s2 := range globalScanners {
+			vector := s1.getMoveVector(s2)
+			distance := int(math.Abs(float64(vector.X)) + math.Abs(float64(vector.Y)) + math.Abs(float64(vector.Z)))
+			if distance > largestDistance {
+				largestDistance = distance
+			}
+		}
+	}
+	fmt.Println(">>> largestDistance", largestDistance)
+}
+
+func checkForOverlap(scan1, scan2 []Beacon) ([]Beacon, Vector) {
+	for _, beacon1 := range scan1 {
+		for _, beacon2 := range scan2 {
+			moveVector := beacon2.getMoveVector(beacon1)
+			movedScan := moveBeacons(scan2, moveVector)
+			matchCount := getMatchCount(scan1, movedScan)
+			if matchCount >= REQUIRED_MATCH_COUNT {
+				return movedScan, moveVector
+			}
+		}
+	}
+
+	return nil, Vector{}
 }
 
 func rotate(scan []Beacon, rotation func(Beacon) Beacon) (rotatedScan []Beacon) {
@@ -113,21 +151,6 @@ func addToGlobalBeacons(scan []Beacon) {
 			globalBeacons = append(globalBeacons, beacon)
 		}
 	}
-}
-
-func checkForOverlap(scan1, scan2 []Beacon) []Beacon {
-	for _, beacon1 := range scan1 {
-		for _, beacon2 := range scan2 {
-			moveVector := beacon2.getMoveVector(beacon1)
-			movedScan := moveBeacons(scan2, moveVector)
-			matchCount := getMatchCount(scan1, movedScan)
-			if matchCount >= REQUIRED_MATCH_COUNT {
-				return movedScan
-			}
-		}
-	}
-
-	return nil
 }
 
 func moveBeacons(scan1 []Beacon, moveVector Vector) []Beacon {
