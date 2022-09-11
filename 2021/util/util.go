@@ -2,8 +2,12 @@ package util
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"strconv"
 )
 
 func ReadFile(path string) (input []string) {
@@ -73,4 +77,27 @@ func Equal(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func BinaryToDecimal(binary string) (decimal int64, err error) {
+	decimal, err = strconv.ParseInt(binary, 2, 64)
+
+	return
+}
+
+// CopyToClipboard is for Linux
+func CopyToClipboard(text string) error {
+	command := exec.Command("xclip", "-in", "-selection", "clipboard")
+	command.Stdin = bytes.NewReader([]byte(text))
+
+	if err := command.Start(); err != nil {
+		return fmt.Errorf("error starting xclip command: %w", err)
+	}
+
+	err := command.Wait()
+	if err != nil {
+		return fmt.Errorf("error running xclip %w", err)
+	}
+
+	return nil
 }
