@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -11,119 +10,108 @@ import (
 )
 
 type Player struct {
-	Id       int
 	Position int
 	Score    int
-	Throws   int
-	History  []int
+}
+
+type Game struct {
+	Players   [2]Player
+	TurnsLeft int
+	PlayerIdx int
+}
+
+func (g *Game) Str() string {
+	return fmt.Sprint(
+		g.Players[0].Position,
+		g.Players[0].Score,
+		g.Players[1].Position,
+		g.Players[1].Score,
+		g.TurnsLeft,
+		g.PlayerIdx,
+	)
+}
+
+func (g *Game) Copy() Game {
+	return Game{
+		Players: [2]Player{
+			{Position: g.Players[0].Position, Score: g.Players[0].Score},
+			{Position: g.Players[1].Position, Score: g.Players[1].Score},
+		},
+		TurnsLeft: g.TurnsLeft,
+		PlayerIdx: g.PlayerIdx,
+	}
+}
+
+func (g *Game) Play(memo map[string][2]int) (p1Wins, p2Wins int) {
+	memoKey := g.Str()
+	if res, ok := memo[memoKey]; ok {
+		return res[0], res[1]
+	}
+
+	if g.TurnsLeft == 0 {
+		g.Players[g.PlayerIdx].Score += g.Players[g.PlayerIdx].Position
+
+		if g.Players[g.PlayerIdx].Score >= GOAL {
+			if g.PlayerIdx == 0 {
+				return 1, 0
+			}
+
+			return 0, 1
+		}
+
+		g.TurnsLeft = 3
+		g.PlayerIdx = g.PlayerIdx ^ 1
+	}
+
+	for roll := 1; roll <= 3; roll++ {
+		newGame := g.Copy()
+		newGame.TurnsLeft--
+
+		newGame.Players[newGame.PlayerIdx].Position += roll
+		if newGame.Players[newGame.PlayerIdx].Position > 10 {
+			newGame.Players[newGame.PlayerIdx].Position -= 10
+		}
+
+		r1, r2 := newGame.Play(memo)
+		p1Wins += r1
+		p2Wins += r2
+	}
+
+	memo[memoKey] = [2]int{p1Wins, p2Wins}
+	return
 }
 
 var answer int
 
-var p1 = Player{Id: 1}
-var p2 = Player{Id: 2}
-
-var p1Wins int64 = 0
-var p2Wins int64 = 0
-
-const GOAL = 11
-
-// 10 = 3.926645636s
-// 11 = 5.623761788s
-// 14 = 1h26m39.998895069s
+const GOAL = 21
 
 func main() {
 	start := time.Now()
 	lines := ReadFile("../input.txt")
 
+	game := Game{TurnsLeft: 3}
 	for i, line := range lines {
 		s := strings.Split(line, ": ")
 
 		if i == 0 {
-			p1.Position, _ = strconv.Atoi(s[1])
-			p1.History = append(p1.History, p1.Position)
+			pos1, _ := strconv.Atoi(s[1])
+			game.Players[0].Position = pos1
 		}
 		if i == 1 {
-			p2.Position, _ = strconv.Atoi(s[1])
-			p2.History = append(p2.History, p2.Position)
+			pos2, _ := strconv.Atoi(s[1])
+			game.Players[1].Position = pos2
 		}
 	}
 
-	// add 1-0 to open
-	// add 2-0 to open
-	// add 3-0 to open
-	// while open != empty
-	//   each open
-	//     add x+1-0 to open
-	//     add x+2-0 to open
-	//     add x+3-0 to open
-	//     remove that open (x-0)
+	p1Wins, p2Wins := game.Play(map[string][2]int{})
 
-	// Game
-	//  p1 pos
-	//  p1 sco
-	//  p2 pos
-	//  p2 sco
-	//  turn
-
-	rollDice(p1, p2, 1, 0)
-	rollDice(p1, p2, 2, 0)
-	rollDice(p1, p2, 3, 0)
-
-	winner := p1
-	winnerWins := p1Wins
+	answer = p1Wins
 	if p1Wins < p2Wins {
-		winner = p2
-		winnerWins = p2Wins
+		answer = p2Wins
 	}
-	fmt.Printf("P%v wins with", winner.Id)
-	answer = int(winnerWins)
 
 	CopyToClipboard(strconv.Itoa(answer))
 	fmt.Println("\nAnswer:", answer)
 
 	fmt.Println("Time:", time.Since(start))
-}
-
-func rollDice(p1, p2 Player, diceNum, throwCount int) {
-	throwerIdx := math.Mod(math.Floor(float64(throwCount)/3), 2)
-
-	if throwerIdx == 0 {
-		p1 = goTo(p1, diceNum)
-
-		if p1.Score >= GOAL {
-			p1Wins++
-			//fmt.Printf("[1] Wins: %v, P: %+v\n", p1Wins, p1)
-			return
-		}
-	}
-	if throwerIdx == 1 {
-		p2 = goTo(p2, diceNum)
-
-		if p2.Score >= GOAL {
-			p2Wins++
-			//fmt.Printf("[2] Wins: %v, P: %+v\n", p2Wins, p2)
-			return
-		}
-	}
-
-	rollDice(p1, p2, 1, throwCount+1)
-	rollDice(p1, p2, 2, throwCount+1)
-	rollDice(p1, p2, 3, throwCount+1)
-}
-
-func goTo(p Player, diceNum int) (mP Player) {
-	mP = Player{
-		Id:       p.Id,
-		Position: (p.Position+diceNum-1)%10 + 1,
-		Score:    p.Score,
-		Throws:   p.Throws + 1,
-	}
-	if mP.Throws == 3 {
-		mP.Score += mP.Position
-		mP.Throws = 0
-	}
-	mP.History = append(p.History, mP.Position)
-
-	return mP
 }
