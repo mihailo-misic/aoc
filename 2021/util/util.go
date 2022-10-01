@@ -30,20 +30,21 @@ func ReadFile(path string) (input []string) {
 	return
 }
 
-func Includes(strSlice []string, str string) bool {
-	hMap := make(map[string]bool)
-	for _, s := range strSlice {
+func Includes[V comparable](slice []V, val V) bool {
+	hMap := make(map[V]bool)
+	for _, s := range slice {
 		hMap[s] = true
 	}
 
-	return hMap[str] == true
+	return hMap[val] == true
 }
 
-func Intersect(s1, s2 []string) (inter []string) {
-	hMap := make(map[string]bool)
+func Intersect[V comparable](s1, s2 []V) (inter []V) {
+	hMap := make(map[V]bool)
 	for _, s := range s1 {
 		hMap[s] = true
 	}
+
 	for _, s := range s2 {
 		if hMap[s] {
 			inter = append(inter, s)
@@ -53,8 +54,8 @@ func Intersect(s1, s2 []string) (inter []string) {
 	return
 }
 
-func Exclude(s1, s2 []string) (inter []string) {
-	hMap := make(map[string]bool)
+func Exclude[V comparable](s1, s2 []V) (inter []V) {
+	hMap := make(map[V]bool)
 	for _, s := range s2 {
 		hMap[s] = true
 	}
@@ -67,15 +68,17 @@ func Exclude(s1, s2 []string) (inter []string) {
 	return
 }
 
-func Equal(a, b []string) bool {
+func Equal[V comparable](a, b []V) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i, v := range a {
 		if v != b[i] {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -85,7 +88,7 @@ func BinaryToDecimal(binary string) (decimal int64, err error) {
 	return
 }
 
-// CopyToClipboard is for Linux
+// Linux only via xclip
 func CopyToClipboard(text string) error {
 	command := exec.Command("xclip", "-in", "-selection", "clipboard")
 	command.Stdin = bytes.NewReader([]byte(text))
