@@ -56,6 +56,72 @@ func main() {
 }
 
 func part2(commands []Command) {
+	finalCommands := []Command{}
+
+	for i, cmd := range commands {
+		fmt.Println("Doing", i, "/", len(commands))
+
+		if len(finalCommands) == 0 && cmd.Action {
+			finalCommands = append(finalCommands, cmd)
+			continue
+		}
+
+		toAdd := []Command{}
+		for _, cmd2 := range finalCommands {
+			res := cmd.InteractWith(cmd2)
+			for _, item := range res {
+				if item.GetVolume() != 0 {
+					toAdd = append(toAdd, item)
+				}
+			}
+		}
+
+		finalCommands = append(finalCommands, toAdd...)
+	}
+
+	for _, cmd := range finalCommands {
+		if cmd.Action {
+			answer += cmd.GetVolume()
+		} else {
+			answer -= cmd.GetVolume()
+		}
+	}
+}
+
+func (c *Command) InteractWith(c2 Command) (res []Command) {
+	intersection := c.GetIntersectionWith(c2)
+
+	// If new is ON
+	if c.Action {
+		if c2.Action {
+			intersection.Action = false
+			return []Command{*c, intersection}
+		}
+
+		return []Command{*c}
+	}
+
+	// If new is OFF
+	if c2.Action {
+		intersection.Action = false
+		return []Command{intersection}
+	}
+
+	intersection.Action = true
+	return []Command{intersection}
+}
+
+func (c *Command) GetIntersectionWith(c2 Command) (intersection Command) {
+	// If it does not intersect return empty Command
+	// If it does, get intersection
+}
+
+func (c *Command) GetVolume() int {
+	width := c.X[1] - c.X[0]
+	height := c.Y[1] - c.Y[0]
+	depth := c.Z[1] - c.Z[0]
+
+	return width * height * depth
 }
 
 func part1(commands []Command) {
@@ -64,7 +130,7 @@ func part1(commands []Command) {
 	for i, cmd := range commands {
 		fmt.Println("Doing", i, "/", len(commands))
 
-		if isOut(cmd.X) || isOut(cmd.Y) || isOut(cmd.Z) {
+		if isOutOfBounds(cmd.X) || isOutOfBounds(cmd.Y) || isOutOfBounds(cmd.Z) {
 			continue
 		}
 
@@ -84,10 +150,10 @@ func part1(commands []Command) {
 	}
 }
 
-const MIN = -50
-const MAX = 50
+func isOutOfBounds(in [2]int) bool {
+	MIN := -50
+	MAX := 50
 
-func isOut(in [2]int) bool {
 	if (MIN <= in[0] && in[0] <= MAX) || (MIN <= in[1] && in[1] <= MAX) {
 		return false
 	}
