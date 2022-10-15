@@ -41,9 +41,6 @@ func main() {
 			Z:      [2]int{ZLower, ZUpper},
 		}
 	}
-	for _, r := range commands {
-		fmt.Println(r)
-	}
 
 	if PART == 1 {
 		part1(commands)
@@ -61,19 +58,16 @@ func part2(commands []Command) {
 	for i, cmd := range commands {
 		fmt.Println("Doing", i, "/", len(commands))
 
-		if len(finalCommands) == 0 && cmd.Action {
-			finalCommands = append(finalCommands, cmd)
-			continue
-		}
-
 		toAdd := []Command{}
 		for _, cmd2 := range finalCommands {
-			res := cmd.InteractWith(cmd2)
-			for _, item := range res {
-				if item.GetVolume() != 0 {
-					toAdd = append(toAdd, item)
-				}
+			intersection, intersects := cmd.GetIntersectionWith(cmd2)
+			if intersects {
+				toAdd = append(toAdd, intersection)
 			}
+		}
+
+		if cmd.Action {
+			toAdd = append(toAdd, cmd)
 		}
 
 		finalCommands = append(finalCommands, toAdd...)
@@ -88,38 +82,40 @@ func part2(commands []Command) {
 	}
 }
 
-func (c *Command) InteractWith(c2 Command) (res []Command) {
-	intersection := c.GetIntersectionWith(c2)
+func (c *Command) GetIntersectionWith(c2 Command) (intersection Command, intesect bool) {
+	x1 := Max([]int{c.X[0], c2.X[0]})
+	x2 := Min([]int{c.X[1], c2.X[1]})
+	y1 := Max([]int{c.Y[0], c2.Y[0]})
+	y2 := Min([]int{c.Y[1], c2.Y[1]})
+	z1 := Max([]int{c.Z[0], c2.Z[0]})
+	z2 := Min([]int{c.Z[1], c2.Z[1]})
 
-	// If new is ON
-	if c.Action {
-		if c2.Action {
-			intersection.Action = false
-			return []Command{*c, intersection}
-		}
-
-		return []Command{*c}
+	if x1 > x2 || y1 > y2 || z1 > z2 {
+		return Command{}, false
 	}
 
-	// If new is OFF
-	if c2.Action {
-		intersection.Action = false
-		return []Command{intersection}
+	action := c.Action
+	if c.Action && c2.Action {
+		action = false
+	}
+	if !c.Action && !c2.Action {
+		action = true
 	}
 
-	intersection.Action = true
-	return []Command{intersection}
-}
+	intersection = Command{
+		Action: action,
+		X:      [2]int{x1, x2},
+		Y:      [2]int{y1, y2},
+		Z:      [2]int{z1, z2},
+	}
 
-func (c *Command) GetIntersectionWith(c2 Command) (intersection Command) {
-	// If it does not intersect return empty Command
-	// If it does, get intersection
+	return intersection, true
 }
 
 func (c *Command) GetVolume() int {
-	width := c.X[1] - c.X[0]
-	height := c.Y[1] - c.Y[0]
-	depth := c.Z[1] - c.Z[0]
+	width := c.X[1] - c.X[0] + 1
+	height := c.Y[1] - c.Y[0] + 1
+	depth := c.Z[1] - c.Z[0] + 1
 
 	return width * height * depth
 }

@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+
+	"golang.org/x/exp/constraints"
 )
 
 func ReadFile(path string) (input []string) {
@@ -80,6 +82,30 @@ func Equal[V comparable](a, b []V) bool {
 	}
 
 	return true
+}
+
+func Min[V constraints.Ordered](slice []V) (min V) {
+	min = slice[0]
+
+	for _, value := range slice {
+		if value < min {
+			min = value
+		}
+	}
+
+	return
+}
+
+func Max[V constraints.Ordered](slice []V) (max V) {
+	max = slice[0]
+
+	for _, value := range slice {
+		if value > max {
+			max = value
+		}
+	}
+
+	return
 }
 
 func BinaryToDecimal(binary string) (decimal int64, err error) {
