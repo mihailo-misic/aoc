@@ -34,11 +34,39 @@ func ReadFile(path string) (input []string) {
 
 func Includes[V comparable](slice []V, val V) bool {
 	hMap := make(map[V]bool)
-	for _, s := range slice {
-		hMap[s] = true
+	for _, item := range slice {
+		hMap[item] = true
 	}
 
 	return hMap[val] == true
+}
+
+func Unique[V comparable](slice []V) (uniqueSlice []V) {
+	hMap := make(map[V]bool)
+
+	for _, item := range slice {
+		if _, ok := hMap[item]; !ok {
+			hMap[item] = true
+			uniqueSlice = append(uniqueSlice, item)
+		}
+	}
+
+	return
+}
+
+func Merge[V comparable](slices [][]V) []V {
+	var totalLen int
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	mergedSlice := make([]V, totalLen)
+	var idx int
+	for _, s := range slices {
+		idx += copy(mergedSlice[idx:], s)
+	}
+
+	return mergedSlice
 }
 
 func Intersect[V comparable](s1, s2 []V) (inter []V) {
