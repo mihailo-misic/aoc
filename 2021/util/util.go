@@ -158,3 +158,9 @@ func CopyToClipboard(text string) error {
 
 	return nil
 }
+
+func Printiln(text ...any) {
+	fmt.Print("\033[G\033[K")
+	fmt.Println(text...)
+	fmt.Print("\033[A")
+}
