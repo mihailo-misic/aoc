@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	. "github.com/mihailo-misic/aoc/util"
 	"github.com/yourbasic/graph"
@@ -15,7 +16,7 @@ type Pod struct {
 	Id          int
 	Type        string
 	Position    int
-	CurrentCost int
+	EnergySpent int
 }
 
 func (p *Pod) GetMoveCost() int {
@@ -103,7 +104,7 @@ func (p *Pod) GetPathCost(path []int, pods []Pod) (cost int) {
 
 func (p *Pod) GoTo(destination int, pods []Pod) {
 	path := p.GetWalkablePathTo(destination, pods)
-	p.CurrentCost += p.GetMoveCost() * len(path)
+	p.EnergySpent += p.GetMoveCost() * len(path)
 	p.Position = destination
 }
 
@@ -112,21 +113,47 @@ var entrances = []int{2, 4, 6, 8}
 const HALLWAY_LEFT = 0
 const HALLWAY_RIGHT = 10
 
-func (p *Pod) GetPossiblePositions(pods []Pod) (positions []int) {
-	pathToTarget := p.GetWalkablePathTo(p.GetTarget(pods), pods)
-	pathToLeft := p.GetWalkablePathTo(HALLWAY_LEFT, pods)
-	pathToRight := p.GetWalkablePathTo(HALLWAY_RIGHT, pods)
-
-	mergedPath := Merge([][]int{pathToTarget, pathToLeft, pathToRight})
-	uniquePositions := Unique(mergedPath)
-
-	// TODO Maybe prevent hallway to hallway movement
-	// Remove entances
-	for _, pos := range uniquePositions {
-		if !Includes(entrances, pos) {
-			positions = append(positions, pos)
+func (p *Pod) GetMemoKey(pods []Pod) (memoKey string) {
+	memoKey = fmt.Sprint(p.Type, p.Id, p.Position, p.EnergySpent)
+	for _, pod := range pods {
+		if pod.Id != p.Id {
+			memoKey += fmt.Sprint(pod.Type, pod.Id, pod.Position, pod.EnergySpent)
 		}
 	}
+
+	return
+}
+
+var posMemo = map[string][]int{}
+
+func (p *Pod) GetPossiblePositions(pods []Pod) (positions []int) {
+	memoKey := p.GetMemoKey(pods)
+	if res, ok := posMemo[memoKey]; ok {
+		return res
+	}
+	paths := p.GetWalkablePathTo(p.GetTarget(pods), pods)
+
+	if p.EnergySpent == 0 {
+		pathToLeft := p.GetWalkablePathTo(HALLWAY_LEFT, pods)
+		paths = append(paths, pathToLeft...)
+		pathToRight := p.GetWalkablePathTo(HALLWAY_RIGHT, pods)
+		paths = append(paths, pathToRight...)
+	}
+
+	uniquePositions := Unique(paths)
+
+	for _, pos := range uniquePositions {
+		if p.EnergySpent > 0 && p.GetTarget(pods) != pos {
+			continue
+		}
+		if Includes(entrances, pos) { // Remove entrances
+			continue
+		}
+
+		positions = append(positions, pos)
+	}
+
+	posMemo[memoKey] = positions
 
 	return
 }
@@ -147,6 +174,7 @@ var TypeToRooms = map[string][2]int{
 var Graph = createGraph()
 
 func main() {
+	start := time.Now()
 	lines := ReadFile("./sinput.txt")
 
 	pods := []Pod{}
@@ -173,15 +201,67 @@ func main() {
 		}
 	}
 
-	solve(pods, -1)
+	// TODO switch to breadth first with priority
+	answer = solve(pods)
 
 	CopyToClipboard(strconv.Itoa(answer))
 	fmt.Println("\nAnswer:", answer)
+
+	fmt.Println("Duration", time.Since(start))
 }
 
-var _maxLvl = 6
-var _curLvl = 0
+var _lowest = math.MaxInt
+var optionsOpen = 0
 
+func solve(pods []Pod) int {
+	energySpent := getEnergySpent(pods)
+
+	// if all are in their room set answer and STOP
+	if energySpent > _lowest || isEverybodyHappy(pods) {
+		optionsOpen--
+		return energySpent
+	}
+
+	var movablePods []Pod
+	for _, pod := range pods {
+		if pod.Position != pod.GetTarget(pods) {
+			movablePods = append(movablePods, pod)
+		}
+	}
+
+	lowestCost := math.MaxInt
+
+	for _, pod := range movablePods {
+		possiblePositions := pod.GetPossiblePositions(pods)
+
+		for _, pos := range possiblePositions {
+			optionsOpen++
+			clonedPods := make([]Pod, len(pods))
+			copy(clonedPods, pods)
+
+			for idx, cp := range clonedPods {
+				if cp.Id == pod.Id {
+					clonedPods[idx].GoTo(pos, clonedPods)
+					cost := solve(clonedPods)
+					if cost < lowestCost {
+						lowestCost = cost
+						if lowestCost < _lowest {
+							_lowest = lowestCost
+							fmt.Println("new Lowest", _lowest)
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
+	optionsOpen--
+	Printiln("optionsOpen", optionsOpen)
+	return lowestCost
+}
+
+/*
 var bestMoves = map[int]string{
 	0: "B: 15 > 3",
 	1: "C: 13 > 15",
@@ -194,58 +274,14 @@ var bestMoves = map[int]string{
 	8: "D: 5 > 17",
 	9: "A: 18 > 11",
 }
+*/
 
-func solve(pods []Pod, lastMovedPodId int) {
-	if _curLvl > _maxLvl {
-		return
-	}
-
-	// if all are in their room set answer and STOP
-	if isEverybodyHappy(pods) {
-		answer = getSituationCost(pods)
-		return
-	}
-
-	var unhappyPods []Pod
+func getEnergySpent(pods []Pod) (energySpent int) {
 	for _, pod := range pods {
-		if pod.Position != pod.GetTarget(pods) && pod.Id != lastMovedPodId {
-			unhappyPods = append(unhappyPods, pod)
-		}
+		energySpent += pod.EnergySpent
 	}
-	fmt.Println("unhappyPods", unhappyPods)
 
-	lowestCost := math.MaxInt
-	var bestPods []Pod
-	var bestMove string
-	bestPodId := -1
-
-	for _, pod := range unhappyPods {
-		possiblePositions := pod.GetPossiblePositions(pods)
-
-		for _, pos := range possiblePositions {
-			clonedPods := make([]Pod, len(pods))
-			copy(clonedPods, pods)
-
-			for idx, cp := range clonedPods {
-				if cp.Id == pod.Id {
-					clonedPods[idx].GoTo(pos, clonedPods)
-					break
-				}
-			}
-
-			sc := getSituationCost(clonedPods)
-			if sc < lowestCost {
-				bestMove = fmt.Sprintf("%v: %v > %v", pod.Type, pod.Position, pos)
-				lowestCost = sc
-				bestPods = clonedPods
-				bestPodId = pod.Id
-			}
-		}
-	}
-	fmt.Println(bestMove == bestMoves[_curLvl], bestMove)
-
-	_curLvl++
-	solve(bestPods, bestPodId)
+	return
 }
 
 func isEverybodyHappy(pods []Pod) bool {
@@ -263,8 +299,7 @@ func getSituationCost(pods []Pod) (situationCost int) {
 		path := pod.GetPathTo(pod.GetTarget(pods))
 		cost := pod.GetPathCost(path, pods)
 		situationCost += cost
-		situationCost += pod.CurrentCost
-		//fmt.Println(pod.Type, path, cost)
+		situationCost += pod.EnergySpent
 	}
 
 	return situationCost
