@@ -56,7 +56,7 @@ func part2(commands []Command) {
 	finalCommands := []Command{}
 
 	for i, cmd := range commands {
-		fmt.Println("Doing", i, "/", len(commands))
+		Printiln("Doing", i, "/", len(commands))
 
 		toAdd := []Command{}
 		for _, cmd2 := range finalCommands {
