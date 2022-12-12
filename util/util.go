@@ -112,6 +112,16 @@ func Equal[V comparable](a, b []V) bool {
 	return true
 }
 
+func GetIndexOf[V comparable](slice []V, val V) int {
+	for idx := 0; idx < len(slice); idx++ {
+		if val == slice[idx] {
+			return idx
+		}
+	}
+
+	return -1
+}
+
 func Min[V constraints.Ordered](slice []V) (min V) {
 	min = slice[0]
 
