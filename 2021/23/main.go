@@ -25,7 +25,7 @@ var answer int
 			  12    14    16    18
 */
 
-const PART = 1 // 1 or 2
+const PART = 2 // 1 or 2
 
 var TypeToRooms = map[string][]int{
 	"A": {12, 11},
@@ -100,6 +100,16 @@ func compareFunc(a, b []Pod) bool {
 var situations = GetNewHeap(compareFunc)
 var highestSpent = 0
 
+var seenSituations = map[string]bool{}
+
+func GetSituationKey(pods *[]Pod) (key string) {
+	for _, pod := range *pods {
+		key += fmt.Sprint(pod.Id, pod.Position)
+	}
+
+	return
+}
+
 func solve() {
 	// pop pods from situations heap
 	pods, popped := situations.Pop()
@@ -122,6 +132,12 @@ func solve() {
 				if cp.Id == pod.Id {
 					// move the cloned pod in cloned pods
 					clonedPods[idx].GoTo(pos, &clonedPods)
+
+					situationKey := GetSituationKey(&clonedPods)
+					if _, ok := seenSituations[situationKey]; ok {
+						continue
+					}
+					seenSituations[situationKey] = true
 
 					energySpent := getEnergySpent(&clonedPods)
 					if energySpent > highestSpent {
