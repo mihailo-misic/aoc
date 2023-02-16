@@ -1,0 +1,62 @@
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -2
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 13
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -13
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 6
+mul y x
+add z y
+
+
+inp a
+- Read an input value.
+  Store the result in variable a.
+
+add a b
+- Add the value of a to the value of b.
+  Store the result in variable a.
+
+mul a b
+- Multiply the value of a by the value of b.
+  Store the result in variable a.
+
+div a b
+- Divide the value of a by the value of b.
+  Round the result to an integer. 
+  Store the result in variable a.
+
+mod a b
+- Divide the value of a by the value of b.
+  Store the remainder in variable a.
+
+eql a b
+- If a and b are equal store the value 1 in variable a.
+  If a and b are NOT equal store the value 0 in variable a.
