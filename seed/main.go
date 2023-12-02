@@ -8,6 +8,7 @@ import (
 )
 
 var answer int
+var part int = 1
 
 func main() {
 	lines := ReadFile("./sinput.txt")
@@ -17,5 +18,5 @@ func main() {
 	}
 
 	CopyToClipboard(strconv.Itoa(answer))
-	fmt.Println("\nAnswer:", answer)
+	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
 }
