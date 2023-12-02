@@ -10,6 +10,7 @@ import (
 )
 
 var answer int
+var part int = 1
 
 var wordToNum = map[string]string{
 	"one":   "1",
@@ -27,34 +28,41 @@ var wordToNum = map[string]string{
 func main() {
 	lines := ReadFile("./input.txt")
 
-	// 56001 - too small
-
 	for _, line := range lines {
 		pLine := ""
-		word := ""
-		for _, r := range line {
-			sr := string(r)
-			if unicode.IsDigit(r) {
-				word = ""
-				pLine += sr
-				continue
-			}
 
-			word += sr
-			if len(word) < 3 {
-				continue
-			}
+		if part == 1 {
+			pLine = line
+		}
 
-			for w, num := range wordToNum {
-				if strings.Contains(word, w) {
-					pLine += num
-					word = string(word[len(word)-1:])
+		if part == 2 {
+			word := ""
+
+			for _, r := range line {
+				sr := string(r)
+				if unicode.IsDigit(r) {
+					word = ""
+					pLine += sr
+					continue
+				}
+
+				word += sr
+				if len(word) < 3 {
+					continue
+				}
+
+				for w, num := range wordToNum {
+					if strings.Contains(word, w) {
+						pLine += num
+						word = string(word[len(word)-1:])
+					}
 				}
 			}
 		}
 
 		first := 'X'
 		last := 'X'
+
 		for _, r := range pLine {
 			if unicode.IsDigit(r) {
 				if first == 'X' {
@@ -65,8 +73,8 @@ func main() {
 				}
 			}
 		}
+
 		num, _ := strconv.Atoi(fmt.Sprintf("%c%c", first, last))
-		fmt.Println(pLine)
 
 		answer += num
 	}
