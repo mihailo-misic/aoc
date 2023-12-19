@@ -51,10 +51,12 @@ func main() {
 	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
 }
 
-var openerToCompatible = map[string][]string{
-	"L": {"L", "7", "J", "-"},
-	"F": {"F", "7", "J", "-"},
-	"|": {"L", "F", "-"},
+var openerToClosers = map[string][]string{
+	"L":  {"J", "|"},
+	"oL": {"7", "|"},
+	"F":  {"7", "|"},
+	"oF": {"J", "|"},
+	"|":  {"|"},
 }
 
 func getTilesInLoopCount(nodeLoop [][2]int) int {
@@ -66,6 +68,7 @@ func getTilesInLoopCount(nodeLoop [][2]int) int {
 		opener := ""
 
 		for cIdx, c := range row {
+			// Set openenr
 			if opener == "" && c != "." && c != "-" {
 				opener = c
 				continue
