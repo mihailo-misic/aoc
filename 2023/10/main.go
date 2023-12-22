@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kr/pretty"
 	"github.com/mihailo-misic/aoc/util"
 	. "github.com/mihailo-misic/aoc/util"
 	"github.com/samber/lo"
@@ -19,7 +18,7 @@ var grid = [][]string{}
 func main() {
 	defer util.Duration(util.Track("main"))
 
-	lines := ReadFile("./s2input.txt")
+	lines := ReadFile("./input.txt")
 	startPos := [2]int{}
 
 	for lIdx, line := range lines {
@@ -44,7 +43,6 @@ func main() {
 	}
 	if part == 2 {
 		answer = getTilesInLoopCount(nodeLoop)
-		pretty.Println("grid", grid)
 	}
 
 	CopyToClipboard(strconv.Itoa(answer))
@@ -68,20 +66,29 @@ func getTilesInLoopCount(nodeLoop [][2]int) int {
 		opener := ""
 
 		for cIdx, c := range row {
-			// Set openenr
 			if opener == "" && c != "." && c != "-" {
 				opener = c
 				continue
 			}
 
 			if opener != "" {
+				if c == "L" {
+					opener = "oL"
+					continue
+				}
+
+				if c == "F" {
+					opener = "oF"
+					continue
+				}
+
 				if c == "." {
 					tilesInCount++
 					grid[rIdx][cIdx] = "X"
 					continue
 				}
 
-				if !lo.Contains(openerToCompatible[c], c) {
+				if lo.Contains(openerToClosers[opener], c) {
 					opener = ""
 				}
 			}
