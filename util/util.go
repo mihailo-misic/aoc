@@ -8,9 +8,18 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 
 	"golang.org/x/exp/constraints"
 )
+
+func Track(msg string) (string, time.Time) {
+	return msg, time.Now()
+}
+
+func Duration(msg string, start time.Time) {
+	log.Printf("%v: %v\n", msg, time.Since(start))
+}
 
 func ReadFile(path string) (input []string) {
 	file, err := os.Open(path)
