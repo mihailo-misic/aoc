@@ -68,8 +68,8 @@ func main() {
 	/*
 
 			S  S  S
-		     A A A
-		      MMM
+		         A A A
+		          MMM
 			SAMXMAS
 			  MMM
 			 A A A
