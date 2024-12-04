@@ -14,7 +14,7 @@ var part int = 1
 func main() {
 	defer util.Duration(util.Track("main"))
 
-	lines := ReadFile("./sinput.txt")
+	lines := ReadFile("./input.txt")
 
 	for _, line := range lines {
 	}

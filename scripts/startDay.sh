@@ -9,7 +9,7 @@ YEAR=${YEAR:-$CUR_YEAR}
 YEAR_DIR="$ROOT_DIR/$YEAR"
 mkdir -p $YEAR_DIR
 
-LATEST_DAY=$(ls -d "$YEAR_DIR/*/" 2>/dev/null | grep -Eo '[0-9]+' | sort -n | tail -n 1) || LATEST_DAY="00"
+LATEST_DAY=$(ls "$YEAR_DIR" 2>/dev/null | grep -Eo '[0-9]+' | sort -n | tail -n 1) || LATEST_DAY="00"
 NEXT_DAY=$((10#$LATEST_DAY + 1))
 read -p "Enter day  [$NEXT_DAY]: " DAY
 DAY=${DAY:-$NEXT_DAY}
