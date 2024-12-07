@@ -46,7 +46,6 @@ func main() {
 
 	}
 
-	// 78965138 - too high
 	CopyToClipboard(strconv.Itoa(answer))
 	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
 }
