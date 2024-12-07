@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/mihailo-misic/aoc/util"
-	. "github.com/mihailo-misic/aoc/util"
 )
 
 var answer int
@@ -15,7 +14,7 @@ var part int = 2
 func main() {
 	defer util.Duration(util.Track("main"))
 
-	lines := ReadFile("./input.txt")
+	lines := util.ReadFile("./input.txt")
 
 	rows := make([][]int, len(lines))
 	for idx, line := range lines {
@@ -33,7 +32,7 @@ func main() {
 
 		if part == 2 && !safe {
 			for i := 0; i < len(row); i++ {
-				mr := removeIndex(row, i)
+				mr := util.RemoveIndex(row, i)
 				safe = isRowSafe(mr)
 
 				if safe {
@@ -47,15 +46,8 @@ func main() {
 		}
 	}
 
-	CopyToClipboard(strconv.Itoa(answer))
+	util.CopyToClipboard(strconv.Itoa(answer))
 	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
-}
-
-func removeIndex(s []int, index int) []int {
-	ret := []int{}
-	ret = append(ret, s[:index]...)
-
-	return append(ret, s[index+1:]...)
 }
 
 func isRowSafe(row []int) bool {
