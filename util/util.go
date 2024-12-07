@@ -3,20 +3,24 @@ package util
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"time"
 
 	"golang.org/x/exp/constraints"
 )
 
+// Starts the timer
 func Track(msg string) (string, time.Time) {
 	return msg, time.Now()
 }
 
+// Prints duration since provided time
 func Duration(msg string, start time.Time) {
 	log.Printf("%v: %v\n", msg, time.Since(start))
 }
@@ -161,9 +165,18 @@ func BinaryToDecimal(binary string) (decimal int64, err error) {
 	return
 }
 
-// Linux only via xclip
 func CopyToClipboard(text string) error {
-	command := exec.Command("xclip", "-in", "-selection", "clipboard")
+	var command *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		command = exec.Command("pbcopy")
+	case "linux":
+		command = exec.Command("xclip", "-in", "-selection", "clipboard")
+	default:
+		return errors.New("unsupported platform")
+	}
+
 	command.Stdin = bytes.NewReader([]byte(text))
 
 	if err := command.Start(); err != nil {
@@ -178,8 +191,22 @@ func CopyToClipboard(text string) error {
 	return nil
 }
 
+// Print text in the same terminal line
 func Printiln(text ...any) {
 	fmt.Print("\033[G\033[K")
 	fmt.Println(text...)
 	fmt.Print("\033[A")
+}
+
+func PrintSlice[V constraints.Ordered](slice []V) {
+	for _, row := range slice {
+		fmt.Println(row)
+	}
+}
+
+func RemoveIndex[V constraints.Ordered](slice []V, index int) []V {
+	newSlice := []V{}
+	newSlice = append(newSlice, slice[:index]...)
+
+	return append(newSlice, slice[index+1:]...)
 }
