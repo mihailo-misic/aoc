@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/mihailo-misic/aoc/util"
 )
@@ -68,21 +67,14 @@ func main() {
 
 		path := g.GetUniquePositions()
 
-		var wg sync.WaitGroup
-		wg.Add(len(path))
 		loopChan := make(chan bool)
 
 		for posStr := range path {
-			go Simulate(board, startPos, posStr, &wg, loopChan)
+			go Simulate(board, startPos, posStr, loopChan)
 		}
 
-		go func() {
-			wg.Wait()
-			close(loopChan)
-		}()
-
-		for itLoops := range loopChan {
-			if itLoops {
+		for i := 0; i < len(path); i++ {
+			if <-loopChan {
 				answer++
 			}
 		}
@@ -92,9 +84,7 @@ func main() {
 	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
 }
 
-func Simulate(board Board, startPos Coord, posStr string, wg *sync.WaitGroup, loopChan chan<- bool) {
-	defer wg.Done()
-
+func Simulate(board Board, startPos Coord, posStr string, loopChan chan<- bool) {
 	pos := strings.Split(posStr, "-")
 	y, _ := strconv.Atoi(pos[0])
 	x, _ := strconv.Atoi(pos[1])
@@ -117,6 +107,7 @@ func Simulate(board Board, startPos Coord, posStr string, wg *sync.WaitGroup, lo
 		if err != nil {
 			if err.Error() == "looping" {
 				loopChan <- true
+				return
 			}
 
 			break
