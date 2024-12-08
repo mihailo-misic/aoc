@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/mihailo-misic/aoc/util"
 )
@@ -65,43 +66,64 @@ func main() {
 			}
 		}
 
-		ghostBoard := CopyBoard(board)
 		path := g.GetUniquePositions()
 
+		var wg sync.WaitGroup
+		wg.Add(len(path))
+		loopChan := make(chan bool)
+
 		for posStr := range path {
-			// TODO fun to parallelize
-			pos := strings.Split(posStr, "-")
-			y, _ := strconv.Atoi(pos[0])
-			x, _ := strconv.Atoi(pos[1])
+			go Simulate(board, startPos, posStr, &wg, loopChan)
+		}
 
-			if y == startPos[0] && x == startPos[1] {
-				continue
+		go func() {
+			wg.Wait()
+			close(loopChan)
+		}()
+
+		for itLoops := range loopChan {
+			if itLoops {
+				answer++
 			}
-
-			ghost := Guard{
-				Position:  startPos,
-				Direction: "up",
-				Memories:  map[string]bool{},
-			}
-			ghostBoard[y][x] = "#"
-
-			for {
-				err := ghost.Move(ghostBoard)
-				if err != nil {
-					if err.Error() == "looping" {
-						answer++
-					}
-
-					break
-				}
-			}
-
-			ghostBoard[y][x] = board[y][x]
 		}
 	}
 
 	util.CopyToClipboard(strconv.Itoa(answer))
 	fmt.Printf("\nAnswer (Part %v): %v\n", part, answer)
+}
+
+func Simulate(board Board, startPos Coord, posStr string, wg *sync.WaitGroup, loopChan chan<- bool) {
+	defer wg.Done()
+
+	pos := strings.Split(posStr, "-")
+	y, _ := strconv.Atoi(pos[0])
+	x, _ := strconv.Atoi(pos[1])
+
+	if y == startPos[0] && x == startPos[1] {
+		loopChan <- false
+		return
+	}
+
+	ghost := Guard{
+		Position:  startPos,
+		Direction: "up",
+		Memories:  map[string]bool{},
+	}
+	ghostBoard := CopyBoard(board)
+	ghostBoard[y][x] = "#"
+
+	for {
+		err := ghost.Move(ghostBoard)
+		if err != nil {
+			if err.Error() == "looping" {
+				loopChan <- true
+			}
+
+			break
+		}
+	}
+
+	loopChan <- false
 }
 
 func (g *Guard) Move(board Board) error {
