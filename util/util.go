@@ -198,7 +198,7 @@ func Printiln(text ...any) {
 	fmt.Print("\033[A")
 }
 
-func PrintSlice[V constraints.Ordered](slice []V) {
+func PrintSlice[V constraints.Ordered](slice [][]V) {
 	for _, row := range slice {
 		fmt.Println(row)
 	}
