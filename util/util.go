@@ -54,17 +54,37 @@ func Includes[V comparable](slice []V, val V) bool {
 	return hMap[val] == true
 }
 
-func Unique[V comparable](slice []V) (uniqueSlice []V) {
-	hMap := make(map[V]bool)
+func Unique[V comparable](slice any) any {
+	switch sl := slice.(type) {
+	case []V:
+		hMap := make(map[V]bool)
+		unique := []V{}
 
-	for _, item := range slice {
-		if _, ok := hMap[item]; !ok {
-			hMap[item] = true
-			uniqueSlice = append(uniqueSlice, item)
+		for _, item := range sl {
+			if _, ok := hMap[item]; !ok {
+				hMap[item] = true
+				unique = append(unique, item)
+			}
 		}
+
+		return unique
+
+	case [][]V:
+		hMap := map[string]bool{}
+		unique := [][]V{}
+
+		for _, item := range sl {
+			key := fmt.Sprint(item)
+			if _, ok := hMap[key]; !ok {
+				hMap[key] = true
+				unique = append(unique, item)
+			}
+		}
+
+		return unique
 	}
 
-	return
+	return nil
 }
 
 func Merge[V comparable](slices [][]V) []V {
