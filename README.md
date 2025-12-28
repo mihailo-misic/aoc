@@ -3,3 +3,12 @@
 My [Advent of Code](https://adventofcode.com) work
 
 > Note: I did not clean up the code after completing the tasks. Some solutions might be quite messy.
+
+
+## Getting Started
+
+Start a new day via the startDay script:  
+```bash
+bash ./scripts/startDay.sh
+```
+
