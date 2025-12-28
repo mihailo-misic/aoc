@@ -7,13 +7,15 @@ import (
 	"github.com/mihailo-misic/aoc/util"
 )
 
+const part int = 1
+const inputPath string = "./sinput.txt"
+
 var answer int
-var part int = 1
 
 func main() {
 	defer util.Duration(util.Track("main"))
 
-	lines := util.ReadFile("./input.txt")
+	lines := util.ReadFile(inputPath)
 
 	for _, line := range lines {
 	}
